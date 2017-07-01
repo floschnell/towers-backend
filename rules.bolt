@@ -1,0 +1,100 @@
+path /v1 {
+  read() {
+    true
+  }
+}
+
+// Logins ---------------------------------
+
+path /v1/authentication/{uid} is String {
+  read() {
+    isCurrentUser(uid)
+  }
+  write() {
+    isEmpty(this) && isCurrentUser(this)
+  }
+}
+
+// Players ---------------------------------
+
+type SimplePlayer {
+  name: String
+}
+
+type Player extends SimplePlayer {
+  name: String
+  mail: String | Null,
+  token: String | Null,
+  uid: String | Null,
+  games: SimpleGame[] | Null
+}
+
+path /v1/players/{playerId} is Player {
+  read() {
+    isCurrentUser(this)
+  }
+}
+
+path /v1/players/{playerId}/games/{gameId} is SimpleGame;
+
+// Games -----------------------------------
+
+type Field {
+  x: Number,
+  y: Number,
+  color: Number
+  belongsToPlayer: String | Null
+}
+
+type Move {
+  color: Number
+  player: String
+  sourceField: Field,
+  targetField: Field
+}
+
+type SimpleGame {
+  currentPlayer: String,
+  players: SimplePlayer[]
+}
+
+type Game extends SimpleGame {
+  currentColor: Number | Null,
+  currentPlayer: String,
+  moves: Move[] | Null,
+}
+
+path /v1/games/{gameId} is Game {
+  read() {
+    isParticipant(getCurrentPlayerId(), this)
+  }
+}
+
+// Notifications -----------------------------
+
+path /v1/notifications/{gameId} is Number {
+  read() {
+    true
+  }
+  write() {
+    isParticipant(getCurrentPlayerId(), root.v1.games[gameId])
+  }
+}
+
+// Helpers -----------------------------------
+
+function getCurrentPlayerId() {
+  root.v1.authentication[auth.uid].val()
+}
+
+function isParticipant(playerId, game) {
+  game != null && game.players[playerId] != null
+}
+
+function isCurrentUser(uid) {
+  uid == auth.uid
+}
+
+function isEmpty(value) {
+  prior(value) == null
+}
