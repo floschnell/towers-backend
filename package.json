@@ -2,8 +2,9 @@
   "name": "towers-backend",
   "version": "1.0.0",
   "description": "Provides the firebase backend schema for the towers game.",
-  "main": "index.js",
   "scripts": {
+    "build": "mkdir dist; ./node_modules/.bin/firebase-bolt rules.bolt --output dist/rules.json",
+    "deploy": "echo \"Not yet supported ...\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/floschnell/towers-backend/issues"
   },
-  "homepage": "https://github.com/floschnell/towers-backend#readme"
+  "homepage": "https://github.com/floschnell/towers-backend#readme",
+  "devDependencies": {
+    "firebase-bolt": "^0.8.2"
+  }
 }
