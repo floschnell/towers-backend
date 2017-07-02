@@ -1,6 +1,9 @@
 path /v1 {
   read() {
-    true
+    false
+  }
+  write() {
+    false
   }
 }
 
@@ -10,63 +13,102 @@ path /v1/authentication/{uid} is String {
   read() {
     isCurrentUser(uid)
   }
-  write() {
-    isEmpty(this) && isCurrentUser(this)
+  create() {
+    isCurrentUser(uid)
+  }
+  update() {
+    false
+  }
+  delete() {
+    isCurrentUser(uid)
   }
 }
 
 // Players ---------------------------------
 
 type SimplePlayer {
-  name: String
+  name: String,
+  id: String | Null
 }
 
 type Player extends SimplePlayer {
-  name: String
   mail: String | Null,
   token: String | Null,
-  uid: String | Null,
-  games: SimpleGame[] | Null
+  uid: String | Null
 }
 
-path /v1/players/{playerId} is Player {
+path /v1/players {
   read() {
-    isCurrentUser(this)
+    true
+  }
+  write() {
+    false
   }
 }
 
-path /v1/players/{playerId}/games/{gameId} is SimpleGame;
+path /v1/players/{playerId} is Player {
+  create() {
+    isCurrentUser(this.uid)
+  }
+  update() {
+    isCurrentUser(prior(this.uid)) && isCurrentUser(this.uid)
+  }
+  delete() {
+    isCurrentUser(this.uid)
+  }
+}
+
+path /v1/players/{playerId}/games/{gameId} is SimpleGame {
+  create() {
+    isParticipant(getCurrentPlayerId(), this)
+  }
+  update() {
+    isParticipant(getCurrentPlayerId(), prior(this))
+  }
+  delete() {
+    isParticipant(getCurrentPlayerId(), this)
+  }
+}
 
 // Games -----------------------------------
 
 type Field {
   x: Number,
   y: Number,
-  color: Number
+  color: Number,
   belongsToPlayer: String | Null
 }
 
 type Move {
-  color: Number
-  player: String
+  color: Number,
+  player: String,
   sourceField: Field,
   targetField: Field
 }
 
 type SimpleGame {
   currentPlayer: String,
-  players: SimplePlayer[]
+  players: Map<String, SimplePlayer>
 }
 
 type Game extends SimpleGame {
   currentColor: Number | Null,
-  currentPlayer: String,
-  moves: Move[] | Null,
+  moves: Move[] | Null
 }
 
 path /v1/games/{gameId} is Game {
   read() {
+    this == null || isParticipant(getCurrentPlayerId(), this)
+  }
+  create() {
     isParticipant(getCurrentPlayerId(), this)
+  }
+  update() {
+    prior(this.currentPlayer) == getCurrentPlayerId() &&
+    (this.currentPlayer == null || isParticipant(this.currentPlayer, prior(this)))
+  }
+  delete() {
+    prior(this.currentPlayer) == getCurrentPlayerId()
   }
 }
 
@@ -82,6 +124,10 @@ path /v1/notifications/{gameId} is Number {
 }
 
 // Helpers -----------------------------------
+
+function isLoggedin() {
+  auth != null && auth.uid != null
+}
 
 function getCurrentPlayerId() {
   root.v1.authentication[auth.uid].val()

@@ -4,8 +4,7 @@
   "description": "Provides the firebase backend schema for the towers game.",
   "scripts": {
     "build": "mkdir dist; ./node_modules/.bin/firebase-bolt rules.bolt --output dist/rules.json",
-    "deploy": "echo \"Not yet supported ...\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "./node_modules/.bin/firebase deploy"
   },
   "repository": {
     "type": "git",
@@ -26,6 +25,7 @@
   },
   "homepage": "https://github.com/floschnell/towers-backend#readme",
   "devDependencies": {
-    "firebase-bolt": "^0.8.2"
+    "firebase-bolt": "^0.8.2",
+    "firebase-tools": "^3.9.1"
   }
 }
