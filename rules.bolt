@@ -26,9 +26,15 @@ path /v1/authentication/{uid} is String {
 
 // Players ---------------------------------
 
+type PlayerId extends String {
+  validate() {
+    this.length >= 3 && this.length <= 30
+  }
+}
+
 type SimplePlayer {
   name: String,
-  id: String | Null
+  id: PlayerId | Null
 }
 
 type Player extends SimplePlayer {
@@ -76,18 +82,18 @@ type Field {
   x: Number,
   y: Number,
   color: Number,
-  belongsToPlayer: String | Null
+  belongsToPlayer: PlayerId | Null
 }
 
 type Move {
   color: Number,
-  player: String,
+  player: PlayerId,
   sourceField: Field,
   targetField: Field
 }
 
 type SimpleGame {
-  currentPlayer: String,
+  currentPlayer: PlayerId,
   players: Map<String, SimplePlayer>
 }
 
@@ -123,7 +129,30 @@ path /v1/notifications/{gameId} is Number {
   }
 }
 
+// Requests ----------------------------------
+
+type GameRequest {
+  player: PlayerId,
+  when: CurrentTimestamp,
+  beginningPlayer: PlayerId
+}
+
+path /v1/requests/{playerId} is GameRequest {
+  read() {
+    true
+  }
+  write() {
+    getCurrentPlayerId() == playerId &&
+    this != playerId &&
+    (this.beginningPlayer == playerId || this.beginningPlayer == this.player)
+  }
+}
+
 // Helpers -----------------------------------
+
+type CurrentTimestamp extends Number {
+  validate() { this == now }
+}
 
 function isLoggedin() {
   auth != null && auth.uid != null
